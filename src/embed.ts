@@ -1,6 +1,7 @@
 // Pure logic of the kanban-embed code block: read its options, and build the columns to draw from one or more
 // parsed boards. No Obsidian imports, so the golden vectors run in plain Node.
 import { parseBoard, type Card } from './board';
+import { parseSwimlane, type SwimlaneSpec } from './swimlanes';
 
 export interface EmbedConfig {
 	/** Link texts of the boards, in order ("Projects/Website" from "[[Projects/Website]]"). */
@@ -13,11 +14,13 @@ export interface EmbedConfig {
 	filter: string[];
 	/** Text shown above the board instead of the board name. */
 	title: string;
+	/** Rows across the lanes, from the "swimlane:" line. Pro. Not set when the block has no such line. */
+	swimlane?: SwimlaneSpec;
 	/** Lines that were not understood, for the error line under the embed. */
 	errors: string[];
 }
 
-const KEYS = new Set(['board', 'boards', 'lanes', 'lane', 'hide-done', 'filter', 'title']);
+const KEYS = new Set(['board', 'boards', 'lanes', 'lane', 'hide-done', 'filter', 'title', 'swimlane', 'rows']);
 
 /** Link texts in a value: [[a]], [[b|alias]] or plain comma separated paths. */
 export function parseLinks(value: string): string[] {
@@ -51,7 +54,11 @@ export function parseConfig(source: string): EmbedConfig {
 			else if (/^(false|no|off)$/i.test(value)) cfg.hideDone = false;
 			else cfg.errors.push(`hide-done must be true or false: ${value}`);
 		} else if (key === 'filter') cfg.filter.push(...value.split(/\s+/).filter((x) => x !== ''));
-		else cfg.title = value;
+		else if (key === 'swimlane' || key === 'rows') {
+			const spec = parseSwimlane(value);
+			if (typeof spec === 'string') cfg.errors.push(spec);
+			else cfg.swimlane = spec;
+		} else cfg.title = value;
 	}
 	if (cfg.boards.length === 0) cfg.errors.push('Add a line like: board: [[My board]]');
 	return cfg;

@@ -3,6 +3,7 @@
 // Board format (obsidian-kanban 2.x): frontmatter "kanban-plugin: board"; each heading is a lane; "## Title (3)"
 // sets a limit of 3 cards; a "**Complete**" line under the heading marks the lane's cards done; "***" followed
 // by "## Archive" starts the archive; "%% kanban:settings" ... "%%" holds the board settings.
+import { markDone, type TasksBridge } from './done';
 
 export interface Card {
 	/** Card text: first line plus continuation lines, dedented, with the block id removed. */
@@ -164,19 +165,16 @@ function locate(board: Board, lines: string[], ref: CardRef): Card | EditResult 
 	return card;
 }
 
-/** Sets the checkbox character of the first card line. */
-function withCheck(line: string, checked: boolean): string {
-	return line.replace(/^([-*+] )\[.\]/, `$1[${checked ? 'x' : ' '}]`);
-}
-
-/** Checks or unchecks one card. */
-export function toggleCard(md: string, ref: CardRef, checked?: boolean): EditResult {
+/** Checks or unchecks one card. With the Tasks plugin on, the card gets the Tasks done date (see done.ts). */
+export function toggleCard(md: string, ref: CardRef, checked?: boolean, tasks?: TasksBridge | null): EditResult {
 	const board = parseBoard(md);
 	const { lines, eol } = splitLines(md);
 	const card = locate(board, lines, ref);
 	if ('ok' in card) return card;
 	if (card.checkChar === null) return { ok: false, reason: 'no-checkbox' };
-	lines[card.line] = withCheck(lines[card.line] ?? '', checked ?? !card.checked);
+	const done = tasks ? card.checkChar === tasks.doneChar : card.checked;
+	const marked = markDone(lines.slice(card.line, card.end), checked ?? !done, tasks ?? null);
+	lines.splice(card.line, card.end - card.line, ...marked.all.flat());
 	return { ok: true, md: lines.join(eol) };
 }
 
@@ -205,8 +203,10 @@ function insertAt(lines: string[], at: number, cardLines: string[]): string[] {
  * Moves one card to another lane (or another place in the same lane). `to.index` is the place among the cards of
  * the target lane as the caller sees them, with the moved card still in its old place.
  * A card that enters a Complete lane is checked; a card that leaves one for a normal lane is unchecked.
+ * With the Tasks plugin on, the finished card gets the Tasks done date, as in Kanban. A recurring task leaves
+ * its new copy in the old place.
  */
-export function moveCard(md: string, from: CardRef, to: { lane: number; index: number }): EditResult {
+export function moveCard(md: string, from: CardRef, to: { lane: number; index: number }, tasks?: TasksBridge | null): EditResult {
 	const board = parseBoard(md);
 	const { lines, eol } = splitLines(md);
 	const card = locate(board, lines, from);
@@ -215,17 +215,24 @@ export function moveCard(md: string, from: CardRef, to: { lane: number; index: n
 	const dst = board.lanes[to.lane];
 	if (!dst) return { ok: false, reason: 'missing' };
 	let block = lines.slice(card.line, card.end);
-	if (card.checkChar !== null && dst.complete !== src.complete) block[0] = withCheck(block[0] ?? '', dst.complete);
-	if (from.lane === to.lane && (to.index === from.card || to.index === from.card + 1)) return { ok: true, md };
+	let stays: string[] = [];
+	if (card.checkChar !== null && (src.complete || dst.complete)) {
+		const marked = markDone(block, dst.complete, tasks ?? null);
+		block = marked.all[marked.main] ?? block;
+		stays = marked.all.filter((_b, i) => i !== marked.main).flat();
+	}
+	const same = from.lane === to.lane && (to.index === from.card || to.index === from.card + 1);
+	if (same && stays.length === 0 && block.join('\n') === lines.slice(card.line, card.end).join('\n')) return { ok: true, md };
 	const at = insertLine(lines, dst, to.index);
 	const removed = lines.slice(0, card.line).concat(lines.slice(card.end));
 	const shift = at > card.line ? card.end - card.line : 0;
-	block = block.slice();
-	return { ok: true, md: insertAt(removed, at - shift, block).join(eol) };
+	const pos = at - shift;
+	const out = insertAt(removed, card.line, stays);
+	return { ok: true, md: insertAt(out, pos >= card.line ? pos + stays.length : pos, block).join(eol) };
 }
 
 /** Adds a card at the end of a lane. The text becomes one line; a Complete lane gets a checked card. */
-export function addCard(md: string, lane: number, text: string): EditResult {
+export function addCard(md: string, lane: number, text: string, tasks?: TasksBridge | null): EditResult {
 	const clean = text.replace(/\s*\r?\n\s*/g, ' ').trim();
 	if (clean === '') return { ok: false, reason: 'empty' };
 	const board = parseBoard(md);
@@ -233,7 +240,9 @@ export function addCard(md: string, lane: number, text: string): EditResult {
 	const dst = board.lanes[lane];
 	if (!dst) return { ok: false, reason: 'missing' };
 	const at = insertLine(lines, dst, dst.cards.length);
-	return { ok: true, md: insertAt(lines, at, [`- [${dst.complete ? 'x' : ' '}] ${clean}`]).join(eol) };
+	const open = [`- [ ] ${clean}`];
+	const added = dst.complete ? markDone(open, true, tasks ?? null).all.flat() : open;
+	return { ok: true, md: insertAt(lines, at, added).join(eol) };
 }
 
 export type EditOp =
@@ -242,8 +251,8 @@ export type EditOp =
 	| { type: 'add'; lane: number; text: string };
 
 /** One change to a board file, as the embed asks for it. The golden vectors call this. */
-export function applyEdit(md: string, op: EditOp): EditResult {
-	if (op.type === 'toggle') return toggleCard(md, { lane: op.lane, card: op.card, expect: op.expect }, op.checked);
-	if (op.type === 'move') return moveCard(md, { lane: op.lane, card: op.card, expect: op.expect }, { lane: op.toLane, index: op.index });
-	return addCard(md, op.lane, op.text);
+export function applyEdit(md: string, op: EditOp, tasks?: TasksBridge | null): EditResult {
+	if (op.type === 'toggle') return toggleCard(md, { lane: op.lane, card: op.card, expect: op.expect }, op.checked, tasks);
+	if (op.type === 'move') return moveCard(md, { lane: op.lane, card: op.card, expect: op.expect }, { lane: op.toLane, index: op.index }, tasks);
+	return addCard(md, op.lane, op.text, tasks);
 }

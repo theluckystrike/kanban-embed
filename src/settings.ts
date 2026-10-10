@@ -8,6 +8,8 @@ export interface KanbanEmbedSettings {
 	laneWidth: number;
 	/** Hide checked cards in embeds that have no hide-done line. */
 	hideDone: boolean;
+	/** Swimlane rows the user folded, by embed: note path, boards and swimlane line make the key. */
+	collapsedRows: Record<string, string[]>;
 }
 
 export const LANE_MIN = 180;
@@ -16,7 +18,24 @@ export const LANE_MAX = 480;
 export const DEFAULT_SETTINGS: KanbanEmbedSettings = {
 	laneWidth: 240,
 	hideDone: false,
+	collapsedRows: {},
 };
+
+/** Most embeds and rows the folded state keeps, so a hand-edited data.json cannot grow without bound. */
+export const COLLAPSED_MAX_KEYS = 200;
+export const COLLAPSED_MAX_ROWS = 100;
+
+/** Keeps the folded rows that are lists of text, drops the rest and caps both sizes. */
+export function normalizeCollapsed(saved: unknown): Record<string, string[]> {
+	const out: Record<string, string[]> = {};
+	if (typeof saved !== 'object' || saved === null || Array.isArray(saved)) return out;
+	for (const [key, rows] of Object.entries(saved).slice(0, COLLAPSED_MAX_KEYS)) {
+		if (!Array.isArray(rows)) continue;
+		const list = (rows as unknown[]).filter((r): r is string => typeof r === 'string').slice(0, COLLAPSED_MAX_ROWS);
+		if (list.length > 0) out[key] = [...new Set(list)];
+	}
+	return out;
+}
 
 /** Fills gaps and drops bad values from saved data, so old or hand-edited data.json never breaks the plugin. */
 export function normalizeSettings(saved: Partial<KanbanEmbedSettings> | null | undefined): KanbanEmbedSettings {
@@ -25,6 +44,7 @@ export function normalizeSettings(saved: Partial<KanbanEmbedSettings> | null | u
 	return {
 		laneWidth: Math.min(LANE_MAX, Math.max(LANE_MIN, w)),
 		hideDone: typeof s.hideDone === 'boolean' ? s.hideDone : DEFAULT_SETTINGS.hideDone,
+		collapsedRows: normalizeCollapsed(s.collapsedRows),
 	};
 }
 
@@ -52,8 +72,8 @@ export class KanbanEmbedSettingTab extends PluginSettingTab {
 			{
 				name: 'Pro features',
 				desc: isPro()
-					? 'Pro is on: move cards by drag and drop or the Move to menu, add cards, several boards in one embed, and the card filter.'
-					: 'Free version: one board per embed, lane picking, check off cards, live update. Pro adds moving cards, adding cards, several boards in one embed, and the card filter.',
+					? 'Pro is on: move cards by drag and drop or the Move to menu, add cards, several boards in one embed, the card filter, and swimlane rows.'
+					: 'Free version: one board per embed, lane picking, check off cards, live update. Pro adds moving cards, adding cards, several boards in one embed, the card filter, and swimlane rows.',
 			},
 		];
 	}

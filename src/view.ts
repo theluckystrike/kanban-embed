@@ -1,6 +1,7 @@
 import { Keymap, MarkdownRenderChild, MarkdownRenderer, Menu, Notice, TFile, setIcon } from 'obsidian';
 import { buildView, parseConfig, type EmbedConfig, type EmbedView, type SourceBoard, type ViewCard, type ViewColumn } from './embed';
 import { FREE_MAX_BOARDS, isPro, onProChange } from './pro';
+import { UNASSIGNED_KEY, describeSwimlane, dropIndex, groupSwimlanes, rowOf, rowSuffix, type SwimRow, type SwimlaneSpec } from './swimlanes';
 import type KanbanEmbedPlugin from './main';
 
 export const BLOCK_ID = 'kanban-embed';
@@ -118,10 +119,15 @@ export class BoardEmbed extends MarkdownRenderChild {
 		if (view.missingLanes.length > 0) notes.push(`No lane named ${view.missingLanes.join(', ')}.`);
 		if (cut > 0) notes.push(`Showing the first board. Pro shows all ${cut + FREE_MAX_BOARDS} boards in one embed.`);
 		if (!isPro() && this.config.filter.length > 0) notes.push('The filter line is a Pro feature, so every card is shown.');
+		if (!isPro() && this.config.swimlane) notes.push('The swimlane line is a Pro feature, so the cards are shown without rows.');
 		for (const n of notes) el.createDiv({ cls: 'kanban-embed-note mod-warning', text: n });
 		if (this.boards.length === 0) return;
-		const lanesEl = el.createDiv({ cls: 'kanban-embed-lanes' });
-		view.columns.forEach((col, i) => this.renderColumn(lanesEl, col, i));
+		const spec = isPro() ? this.config.swimlane : undefined;
+		if (spec && view.columns.length > 0) this.renderSwim(el, view, spec);
+		else {
+			const lanesEl = el.createDiv({ cls: 'kanban-embed-lanes' });
+			view.columns.forEach((col, i) => this.renderColumn(lanesEl, col, i));
+		}
 		if (view.columns.length === 0) el.createDiv({ cls: 'kanban-embed-note', text: 'This board has no lanes. A lane is a heading in the board file.' });
 	}
 
@@ -166,6 +172,91 @@ export class BoardEmbed extends MarkdownRenderChild {
 		if (col.cards.length === 0) list.createDiv({ cls: 'kanban-embed-empty', text: col.total > 0 ? 'All cards hidden' : 'No cards' });
 		this.bindDrop(list, col);
 		this.renderAdd(lane, col);
+	}
+
+	/** Key of the folded rows of this embed in the plugin data: the note, the boards and the swimlane line. */
+	private collapseKey(spec: SwimlaneSpec): string {
+		return [this.sourcePath, this.config.boards.join('+'), describeSwimlane(spec)].join('\n');
+	}
+
+	/** Swimlanes: one header line of lanes, then one row of cells for each value. A cell holds the cards of one lane in one row. */
+	private renderSwim(parent: HTMLElement, view: EmbedView, spec: SwimlaneSpec): void {
+		const rows = groupSwimlanes(view.columns, spec);
+		const key = this.collapseKey(spec);
+		const folded = new Set(this.plugin.settings.collapsedRows[key] ?? []);
+		const wrap = parent.createDiv({ cls: 'kanban-embed-swim' });
+		wrap.setCssProps({ '--kanban-embed-swim-cols': String(view.columns.length) });
+		const head = wrap.createDiv({ cls: 'kanban-embed-swim-head' });
+		for (const col of view.columns) {
+			const h = head.createDiv({ cls: 'kanban-embed-lane-header', attr: { 'data-lane': col.title } });
+			h.createSpan({ cls: 'kanban-embed-lane-title', text: col.title });
+			const count = h.createSpan({ cls: 'kanban-embed-lane-count', text: col.maxItems > 0 ? `${col.total}/${col.maxItems}` : String(col.total) });
+			if (col.maxItems > 0 && col.total > col.maxItems) count.addClass('mod-over');
+		}
+		for (const row of rows) this.renderRow(wrap, view, spec, row, key, folded);
+		if (rows.length === 0) wrap.createDiv({ cls: 'kanban-embed-empty', text: 'No cards to put in rows.' });
+	}
+
+	private renderRow(wrap: HTMLElement, view: EmbedView, spec: SwimlaneSpec, row: SwimRow, key: string, folded: Set<string>): void {
+		const rowEl = wrap.createDiv({ cls: 'kanban-embed-swim-row', attr: { 'data-row': row.title } });
+		const btn = rowEl.createEl('button', { cls: 'kanban-embed-swim-row-head' });
+		const icon = btn.createSpan({ cls: 'kanban-embed-swim-chevron' });
+		btn.createSpan({ cls: 'kanban-embed-swim-row-title', text: row.title });
+		btn.createSpan({ cls: 'kanban-embed-swim-row-count', text: String(row.count) });
+		const show = (isFolded: boolean) => {
+			rowEl.toggleClass('is-collapsed', isFolded);
+			btn.setAttr('aria-expanded', String(!isFolded));
+			btn.setAttr('aria-label', `${isFolded ? 'Expand' : 'Collapse'} the row ${row.title}`);
+			setIcon(icon, isFolded ? 'chevron-right' : 'chevron-down');
+		};
+		show(folded.has(row.key));
+		btn.addEventListener('click', () => {
+			const next = !rowEl.hasClass('is-collapsed');
+			show(next);
+			if (next) folded.add(row.key);
+			else folded.delete(row.key);
+			void this.plugin.saveCollapsed(key, [...folded]);
+		});
+		const cells = rowEl.createDiv({ cls: 'kanban-embed-swim-cells' });
+		view.columns.forEach((col, ci) => {
+			const cards = row.cells[ci] ?? [];
+			const cell = cells.createDiv({ cls: 'kanban-embed-swim-cell', attr: { 'data-lane': col.title, 'data-row': row.title } });
+			if (col.complete) cell.addClass('mod-complete');
+			const list = cell.createDiv({ cls: 'kanban-embed-cards' });
+			for (const card of cards) this.renderCard(list, card, ci);
+			if (cards.length === 0) list.createDiv({ cls: 'kanban-embed-empty', text: 'No cards' });
+			this.bindRowDrop(list, col, row, cards, spec);
+			this.renderAdd(cell, col, rowSuffix(spec, row));
+		});
+	}
+
+	/** A drop in a cell moves the card to that lane, in front of the next card of the same row. Cards of another row are refused: the row comes from the card text. */
+	private bindRowDrop(list: HTMLElement, col: ViewColumn, row: SwimRow, cards: ViewCard[], spec: SwimlaneSpec): void {
+		const accepts = () => {
+			const d = dragging;
+			if (d === null || d.embed !== this || !col.targets.some((t) => t.board === d.card.board)) return false;
+			return (rowOf(d.card, spec)?.key ?? UNASSIGNED_KEY) === row.key;
+		};
+		list.addEventListener('dragover', (evt) => {
+			if (!accepts()) return;
+			evt.preventDefault();
+			list.addClass('is-drop-target');
+		});
+		list.addEventListener('dragleave', () => list.removeClass('is-drop-target'));
+		list.addEventListener('drop', (evt) => {
+			list.removeClass('is-drop-target');
+			if (!accepts()) return;
+			evt.preventDefault();
+			const card = dragging!.card;
+			const target = col.targets.find((t) => t.board === card.board)!;
+			let above = 0;
+			for (const el of Array.from(list.querySelectorAll<HTMLElement>('.kanban-embed-card'))) {
+				const r = el.getBoundingClientRect();
+				if (evt.clientY < r.top + r.height / 2) break;
+				above++;
+			}
+			void this.plugin.move(this.boards[card.board]!.path, card, target.lane, dropIndex(cards, above, card.board, target.size));
+		});
 	}
 
 	private renderCard(list: HTMLElement, card: ViewCard, colIndex: number): void {
@@ -276,7 +367,8 @@ export class BoardEmbed extends MarkdownRenderChild {
 		return null;
 	}
 
-	private renderAdd(lane: HTMLElement, col: ViewColumn): void {
+	/** The add card button of a lane or a swimlane cell. `suffix` goes behind the typed text, so a card added in a row is in that row. */
+	private renderAdd(lane: HTMLElement, col: ViewColumn, suffix = ''): void {
 		const target = col.targets[0];
 		if (!target) return;
 		const btn = lane.createEl('button', { cls: 'kanban-embed-add', text: 'Add a card' });
@@ -297,7 +389,7 @@ export class BoardEmbed extends MarkdownRenderChild {
 				evt.preventDefault();
 				const text = input.value;
 				close();
-				void this.plugin.add(this.boards[target.board]!.path, target.lane, text);
+				void this.plugin.add(this.boards[target.board]!.path, target.lane, text.trim() === '' ? text : `${text.trim()}${suffix}`);
 			});
 			input.addEventListener('blur', () => window.setTimeout(close, 150));
 		});

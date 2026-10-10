@@ -39,7 +39,9 @@ export const config: WebdriverIO.Config = {
 		browserVersion: appVersion,
 		'wdio:obsidianOptions': {
 			installerVersion,
-			plugins: ['.'],
+			// The Tasks plugin is installed but off. test/e2e/done.e2e.ts turns it on to check the done date
+			// against the real plugin, as Kanban does, and off again.
+			plugins: ['.', { id: 'obsidian-tasks-plugin', enabled: false }],
 			vault: 'test/e2e/vault',
 		},
 	})),

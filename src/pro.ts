@@ -15,7 +15,7 @@ export const SPONSORS: SponsorsConfig = {
 };
 
 export const PRO_UI = {
-	proSummary: 'Pro adds moving cards (drag and drop or the Move to menu), adding cards, several boards in one embed, and the card filter.',
+	proSummary: 'Pro adds moving cards (drag and drop or the Move to menu), adding cards, several boards in one embed, the card filter, and swimlane rows.',
 	priceText: 'Sponsor $5 a month, or $15 once. When you have paid $15 in total, Pro stays on.',
 };
 

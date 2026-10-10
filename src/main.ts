@@ -3,6 +3,7 @@ import type { SponsorsManager } from './license/index';
 import { createGitHubSponsors } from './license/github-obsidian';
 import { applyEdit, type EditResult } from './board';
 import type { ViewCard } from './embed';
+import { tasksBridge } from './tasks';
 import { SPONSORS, bindPro, isPro, resetPro } from './pro';
 import { DEFAULT_SETTINGS, KanbanEmbedSettingTab, normalizeSettings, type KanbanEmbedSettings } from './settings';
 import { BLOCK_ID, BoardEmbed } from './view';
@@ -115,9 +116,9 @@ export default class KanbanEmbedPlugin extends Plugin {
 		return r.ok;
 	}
 
-	/** Free: checks or unchecks a card in its board file. */
+	/** Free: checks or unchecks a card in its board file. With the Tasks plugin on, a finished card gets the Tasks done date, as in Kanban. */
 	toggle(path: string, card: ViewCard, checked: boolean): Promise<boolean> {
-		return this.edit(path, (md) => applyEdit(md, { type: 'toggle', lane: card.lane, card: card.index, expect: card.raw, checked }));
+		return this.edit(path, (md) => applyEdit(md, { type: 'toggle', lane: card.lane, card: card.index, expect: card.raw, checked }, tasksBridge(this.app, path)));
 	}
 
 	/** Pro: moves a card to place `index` of lane `lane` in the same board file. */
@@ -126,7 +127,7 @@ export default class KanbanEmbedPlugin extends Plugin {
 			BoardEmbed.needsPro('Moving cards');
 			return false;
 		}
-		return this.edit(path, (md) => applyEdit(md, { type: 'move', lane: card.lane, card: card.index, expect: card.raw, toLane: lane, index }));
+		return this.edit(path, (md) => applyEdit(md, { type: 'move', lane: card.lane, card: card.index, expect: card.raw, toLane: lane, index }, tasksBridge(this.app, path)));
 	}
 
 	/** Pro: adds a card at the end of a lane. */
@@ -135,7 +136,7 @@ export default class KanbanEmbedPlugin extends Plugin {
 			BoardEmbed.needsPro('Adding cards');
 			return false;
 		}
-		return this.edit(path, (md) => applyEdit(md, { type: 'add', lane, text }));
+		return this.edit(path, (md) => applyEdit(md, { type: 'add', lane, text }, tasksBridge(this.app, path)));
 	}
 
 	async loadSettings(): Promise<void> {
@@ -145,5 +146,14 @@ export default class KanbanEmbedPlugin extends Plugin {
 	async saveSettings(): Promise<void> {
 		await this.saveData(this.settings);
 		for (const e of this.embeds) e.schedule(0);
+	}
+
+	/** Remembers which swimlane rows of one embed are folded. Does not redraw: the row already changed on screen. */
+	async saveCollapsed(key: string, rows: string[]): Promise<void> {
+		const next = { ...this.settings.collapsedRows };
+		if (rows.length > 0) next[key] = rows;
+		else delete next[key];
+		this.settings = normalizeSettings({ ...this.settings, collapsedRows: next });
+		await this.saveData(this.settings);
 	}
 }
