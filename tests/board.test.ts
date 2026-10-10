@@ -1,0 +1,115 @@
+import { describe, expect, it } from 'vitest';
+import { cardMeta, insertLine, parseBoard, parseLaneTitle, splitLines } from '../src/board';
+
+const BOARD = [
+	'---',
+	'',
+	'kanban-plugin: board',
+	'',
+	'---',
+	'',
+	'## Todo',
+	'',
+	'- [ ] Write brief #docs #docs/web',
+	'- [ ] Call Ana @{2026-10-12} @@{09:30}',
+	'',
+	'## Doing (2)',
+	'',
+	'- [ ] Draft homepage',
+	'\tSecond line',
+	'    third line ^abc12',
+	'- [x] Old <br>style',
+	'',
+	'## Done',
+	'',
+	'**Complete**',
+	'- [x] Set up repo',
+	'',
+	'***',
+	'',
+	'## Archive',
+	'',
+	'- [x] Archived',
+	'',
+	'%% kanban:settings',
+	'```',
+	'{"kanban-plugin":"board"}',
+	'```',
+	'%%',
+	'',
+].join('\n');
+
+describe('parseBoard', () => {
+	const b = parseBoard(BOARD);
+
+	it('reads the frontmatter key, lanes, limits and the Complete marker', () => {
+		expect(b.isBoard).toBe(true);
+		expect(b.lanes.map((l) => [l.title, l.maxItems, l.complete, l.cards.length])).toEqual([
+			['Todo', 0, false, 2],
+			['Doing', 2, false, 2],
+			['Done', 0, true, 1],
+		]);
+		expect(b.lanes[2]!.markerLine).toBe(20);
+	});
+
+	it('keeps archived cards apart', () => {
+		expect(b.archive.map((c) => c.text)).toEqual(['Archived']);
+	});
+
+	it('reads multi-line cards, drops the block id and turns <br> into a new line', () => {
+		const [draft, old] = b.lanes[1]!.cards;
+		expect(draft!.text).toBe('Draft homepage\nSecond line\nthird line');
+		expect([draft!.line, draft!.end]).toEqual([13, 16]);
+		expect(old!.text).toBe('Old \nstyle');
+		expect(old!.checked).toBe(true);
+	});
+
+	it('reads tags, date and time', () => {
+		const [brief, call] = b.lanes[0]!.cards;
+		expect(brief!.tags).toEqual(['#docs', '#docs/web']);
+		expect(call!.date).toBe('2026-10-12');
+		expect(call!.time).toBe('09:30');
+		expect(call!.title).toBe('Call Ana');
+	});
+
+	it('treats a note without the frontmatter key as a plain list of lanes', () => {
+		const p = parseBoard('# Plan\n\n- [ ] a\n- b\n');
+		expect(p.isBoard).toBe(false);
+		expect(p.lanes[0]!.cards.map((c) => [c.text, c.checkChar])).toEqual([
+			['a', ' '],
+			['b', null],
+		]);
+	});
+
+	it('ignores list items before the first heading', () => {
+		expect(parseBoard('- [ ] loose\n## A\n- [ ] in').lanes[0]!.cards.map((c) => c.text)).toEqual(['in']);
+	});
+
+	it('counts a custom check character as done and keeps it', () => {
+		const c = parseBoard('## A\n- [/] half').lanes[0]!.cards[0]!;
+		expect([c.checkChar, c.checked]).toEqual(['/', true]);
+	});
+});
+
+describe('helpers', () => {
+	it('parseLaneTitle reads the limit only at the end', () => {
+		expect(parseLaneTitle('Doing (3)')).toEqual({ title: 'Doing', maxItems: 3 });
+		expect(parseLaneTitle('Q (3) plan')).toEqual({ title: 'Q (3) plan', maxItems: 0 });
+	});
+
+	it('cardMeta reads a date link and strips it from the title', () => {
+		expect(cardMeta('Pay rent @[[2026-11-01]] #home')).toEqual({ title: 'Pay rent #home', tags: ['#home'], date: '2026-11-01', time: null });
+	});
+
+	it('splitLines keeps the line ending', () => {
+		expect(splitLines('a\r\nb').eol).toBe('\r\n');
+		expect(splitLines('a\nb').eol).toBe('\n');
+	});
+
+	it('insertLine puts a card after the Complete marker of an empty lane', () => {
+		const md = '## Done\n**Complete**\n\n## Next\n';
+		const lines = md.split('\n');
+		const lane = parseBoard(md).lanes[0]!;
+		expect(insertLine(lines, lane, 0)).toBe(2);
+	});
+});
