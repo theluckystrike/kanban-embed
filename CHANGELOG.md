@@ -1,5 +1,11 @@
 # kanban-embed
 
+## 1.1.1
+
+### Patch Changes
+
+- efdff8f: Correct the GitHub Sponsors payment, check and token storage text in the README.
+
 ## 1.1.0
 
 ### Minor Changes
