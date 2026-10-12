@@ -263,6 +263,7 @@ export class BoardEmbed extends MarkdownRenderChild {
 		const board = this.boards[card.board]!;
 		const el = list.createDiv({ cls: 'kanban-embed-card', attr: { 'data-line': String(card.line) } });
 		if (card.checked) el.addClass('is-checked');
+		if (card.priority) el.addClass(`mod-priority-${card.priority}`);
 		if (card.checkChar !== null) {
 			const box = el.createEl('input', { cls: 'task-list-item-checkbox kanban-embed-check', type: 'checkbox' });
 			box.checked = card.checked;
@@ -277,6 +278,7 @@ export class BoardEmbed extends MarkdownRenderChild {
 		const chips: { cls: string; text: string }[] = [];
 		const when = [card.date, card.time].filter((x): x is string => x !== null).join(' ');
 		if (when !== '') chips.push({ cls: 'mod-date', text: when });
+		if (card.priority) chips.push({ cls: `mod-priority-${card.priority}`, text: card.priority });
 		if (this.boards.length > 1) chips.push({ cls: 'mod-board', text: board.name });
 		if (chips.length > 0) {
 			const meta = el.createDiv({ cls: 'kanban-embed-card-meta' });

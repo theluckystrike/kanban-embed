@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cardMeta, insertLine, parseBoard, parseLaneTitle, splitLines } from '../src/board';
+import { cardMeta, insertLine, parseBoard, parseLaneTitle, priorityOf, splitLines } from '../src/board';
 
 const BOARD = [
 	'---',
@@ -111,5 +111,25 @@ describe('helpers', () => {
 		const lines = md.split('\n');
 		const lane = parseBoard(md).lanes[0]!;
 		expect(insertLine(lines, lane, 0)).toBe(2);
+	});
+
+	it('priorityOf reads the priority tags without case and returns null without a priority tag', () => {
+		expect(priorityOf(['#URGENT'])).toBe('high');
+		expect(priorityOf(['#docs', '#P1'])).toBe('high');
+		expect(priorityOf(['#med'])).toBe('medium');
+		expect(priorityOf(['#p3'])).toBe('low');
+		expect(priorityOf(['#docs', '#low'])).toBe('low');
+		expect(priorityOf(['#low', '#high'])).toBe('high');
+		expect(priorityOf(['#p3', '#Med'])).toBe('medium');
+		expect(priorityOf(['#high-ish', '#lower', '#p10'])).toBe(null);
+		expect(priorityOf(['#docs'])).toBe(null);
+		expect(priorityOf([])).toBe(null);
+	});
+
+	it('a card with a priority tag gets a priority and the class shows it', () => {
+		const b = parseBoard('## A\n- [ ] Ship it #high\n- [ ] Chill #docs\n');
+		const [hot, calm] = b.lanes[0]!.cards;
+		expect(hot!.priority).toBe('high');
+		expect(calm!.priority).toBe(null);
 	});
 });

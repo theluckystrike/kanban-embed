@@ -143,4 +143,25 @@ describe(`${pluginId} in the real app`, function () {
 		expect(s.lanes).toEqual(['Backlog', 'In progress', 'Review', 'Done']);
 		expect(s.notes).toEqual([]);
 	});
+
+	it('a card with a priority tag shows a priority class and chip', async function () {
+		await open('Website project.md');
+		const before = await waitFor((x) => x.cards === 10, 'website board not drawn');
+		await writeFile(WEB, web.replace('## Backlog\n', '## Backlog\n\n- [ ] Rank the search terms #high\n'));
+		await waitFor((x) => x.cards === 11 && x.draws > before.draws, 'no redraw after the change');
+		// The note has a hidden view too, so read only the cards on screen, as the other tests do.
+		const found = await browser.execute(() =>
+			Array.from(document.querySelectorAll<HTMLElement>('.workspace-leaf.mod-active .kanban-embed-card.mod-priority-high'))
+				.filter((x) => x.offsetParent !== null)
+				.map((c) => ({ text: c.textContent ?? '', chip: c.querySelector('.kanban-embed-chip.mod-priority-high')?.textContent ?? null })),
+		);
+		expect(found.length).toBe(1);
+		expect(found[0]!.text.includes('Rank the search terms')).toBe(true);
+		expect(found[0]!.chip).toBe('high');
+		// The sample board has no other priority tag, so the other cards look as before.
+		const marked = await browser.execute(
+			() => Array.from(document.querySelectorAll<HTMLElement>('.workspace-leaf.mod-active .kanban-embed-card[class*="mod-priority-"]')).filter((x) => x.offsetParent !== null).length,
+		);
+		expect(marked).toBe(1);
+	});
 });

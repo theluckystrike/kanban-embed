@@ -20,6 +20,25 @@ export interface Card {
 	tags: string[];
 	date: string | null;
 	time: string | null;
+	/** Priority from a tag: 'high', 'medium' or 'low', or null when no priority tag is on the card. */
+	priority: Priority | null;
+}
+
+export type Priority = 'high' | 'medium' | 'low';
+
+/** Tags that set a priority, checked without case. With two priority tags, the higher priority wins. */
+export const PRIORITY_TAGS: Record<Priority, string[]> = {
+	high: ['#high', '#urgent', '#p1'],
+	medium: ['#medium', '#med', '#p2'],
+	low: ['#low', '#p3'],
+};
+
+/** Priority of a card from its tags, or null when it has no priority tag. */
+export function priorityOf(tags: string[]): Priority | null {
+	const set = new Set(tags.map((t) => t.toLowerCase()));
+	for (const [pr, names] of Object.entries(PRIORITY_TAGS) as [Priority, string[]][])
+		if (names.some((n) => set.has(n))) return pr;
+	return null;
 }
 
 export interface Lane {
@@ -101,7 +120,8 @@ function readCard(lines: string[], i: number): Card | null {
 	const parts = [m[2] ?? '', ...lines.slice(i + 1, end).map((l) => l.replace(CONT_RE, ''))];
 	const text = parts.join('\n').replace(/<br>/g, '\n').replace(BLOCK_ID_RE, '').trim();
 	const checkChar = m[1] ?? null;
-	return { text, ...cardMeta(text), checked: checkChar !== null && checkChar !== ' ', checkChar, line: i, end };
+	const meta = cardMeta(text);
+	return { text, ...meta, priority: priorityOf(meta.tags), checked: checkChar !== null && checkChar !== ' ', checkChar, line: i, end };
 }
 
 /** True when the last non-blank line before i is a thematic break (the archive follows one). */

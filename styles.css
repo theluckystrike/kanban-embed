@@ -138,6 +138,30 @@
 	font-size: var(--font-ui-smaller);
 }
 
+.kanban-embed-card.mod-priority-high {
+	border-left: 3px solid var(--color-red);
+}
+
+.kanban-embed-card.mod-priority-medium {
+	border-left: 3px solid var(--color-orange);
+}
+
+.kanban-embed-card.mod-priority-low {
+	border-left: 3px solid var(--color-blue);
+}
+
+.kanban-embed-chip.mod-priority-high {
+	color: var(--color-red);
+}
+
+.kanban-embed-chip.mod-priority-medium {
+	color: var(--color-orange);
+}
+
+.kanban-embed-chip.mod-priority-low {
+	color: var(--color-blue);
+}
+
 .kanban-embed-more {
 	grid-column: 3;
 	grid-row: 1;

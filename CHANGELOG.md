@@ -1,5 +1,11 @@
 # kanban-embed
 
+## 1.2.0
+
+### Minor Changes
+
+- afca65e: Priority tags such as `#high` and `#low` give a card a colored border and a priority chip.
+
 ## 1.1.1
 
 ### Patch Changes
