@@ -1,6 +1,6 @@
 {
 	"name": "kanban-embed",
-	"version": "1.2.0",
+	"version": "1.2.1",
 	"private": true,
 	"description": "Shows a Kanban board inside any note, read from the board file, with live updates, lane picking and card check-off.",
 	"main": "main.js",

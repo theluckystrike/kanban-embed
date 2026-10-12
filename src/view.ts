@@ -1,4 +1,4 @@
-import { Keymap, MarkdownRenderChild, MarkdownRenderer, Menu, Notice, TFile, setIcon } from 'obsidian';
+import { Component, Keymap, MarkdownRenderChild, MarkdownRenderer, Menu, Notice, TFile, setIcon } from 'obsidian';
 import { buildView, parseConfig, type EmbedConfig, type EmbedView, type SourceBoard, type ViewCard, type ViewColumn } from './embed';
 import { FREE_MAX_BOARDS, isPro, onProChange } from './pro';
 import { UNASSIGNED_KEY, describeSwimlane, dropIndex, groupSwimlanes, rowOf, rowSuffix, type SwimRow, type SwimlaneSpec } from './swimlanes';
@@ -23,6 +23,8 @@ export class BoardEmbed extends MarkdownRenderChild {
 	private paths = new Set<string>();
 	private drawnKey = '';
 	private adding = false;
+	/** Owner of the rendered card text of the board on screen. A redraw unloads it, so old render children do not pile up. */
+	private cardsOwner: Component | null = null;
 
 	constructor(
 		private readonly plugin: KanbanEmbedPlugin,
@@ -111,6 +113,8 @@ export class BoardEmbed extends MarkdownRenderChild {
 	private render(view: EmbedView, missing: string[], cut: number): void {
 		const el = this.containerEl;
 		el.empty();
+		if (this.cardsOwner) this.removeChild(this.cardsOwner);
+		this.cardsOwner = this.addChild(new Component());
 		el.setCssProps({ '--kanban-embed-lane-width': `${this.plugin.settings.laneWidth}px` });
 		this.renderHeader(el, view);
 		const notes: string[] = [...this.config.errors];
@@ -272,7 +276,7 @@ export class BoardEmbed extends MarkdownRenderChild {
 			box.addEventListener('change', () => void this.plugin.toggle(board.path, card, box.checked));
 		}
 		const body = el.createDiv({ cls: 'kanban-embed-card-body' });
-		void MarkdownRenderer.render(this.plugin.app, card.title, body, board.path, this);
+		void MarkdownRenderer.render(this.plugin.app, card.title, body, board.path, this.cardsOwner ?? this);
 		this.bindLinks(body, board.path);
 		const more = el.createEl('button', { cls: 'clickable-icon kanban-embed-more', attr: { 'aria-label': 'Card actions' } });
 		const chips: { cls: string; text: string }[] = [];

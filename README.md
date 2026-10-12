@@ -2,7 +2,7 @@
 
 Shows a Kanban board inside any note, read from the board file, with live updates, lane picking and card check-off.
 
-Put a small code block in a project page, a daily note or a dashboard, and a board of the Kanban plugin shows there. The board stays one Markdown file. The request is issue 4 of the Kanban plugin, open since April 2021 with more than 250 reactions. This plugin is separate and does not need the Kanban plugin.
+Put a small code block in a project page, a daily note or a dashboard, and a Kanban board shows there. The board stays one Markdown file. The request is issue 4 of the Kanban plugin, open since April 2021 with more than 250 reactions. This plugin is separate and does not need the Kanban plugin.
 
 <img src="https://raw.githubusercontent.com/theluckystrike/kanban-embed/HEAD/docs/kanban-embed.gif" alt="Open the project page, check off a card, then move a card to Review" width="720">
 
@@ -12,7 +12,7 @@ Put a small code block in a project page, a daily note or a dashboard, and a boa
 
 Add a `kanban-embed` code block with the board name. The block shows the lanes side by side, with the board name as a link and the card counts. Each lane shows its card count. A lane with a card limit, such as `## In progress (3)`, shows `4/3` and gets a warning border when it is over the limit.
 
-Cards show their links, tags and formatting; a date such as `@{2026-10-14}` shows as a chip. A priority tag on a card gives it a colored left border and a chip: `#high`, `#urgent` or `#p1` for red, `#medium`, `#med` or `#p2` for orange, and `#low` or `#p3` for blue. With two priority tags, the higher one wins. The match does not depend on case; cards without a priority tag look as before. The block works in Reading view and in Live Preview.
+Cards show their links, tags and formatting; a date such as `@{2026-10-14}` shows as a chip. A priority tag on a card gives it a colored left border and a chip: `#high`, `#urgent` or `#p1` for red, `#medium`, `#med` or `#p2` for orange, and `#low` or `#p3` for blue. With two priority tags, the higher one wins. The match ignores case. The block works in Reading view and in Live Preview.
 
 <img src="https://raw.githubusercontent.com/theluckystrike/kanban-embed/HEAD/docs/board-in-note.png" alt="The Website redesign board embedded in a project page, with four lanes and the over-limit lane" width="720">
 
@@ -24,11 +24,11 @@ Add `lanes: In progress, Review` to show only those lanes, in that order. Add `h
 
 ### Check off cards and live update
 
-Each card has a checkbox. Select it to check or uncheck; only that one line of the board file changes.
+Each card has a checkbox. Select it to check or uncheck; only the lines of that card change, plus the next copy of a recurring Tasks task.
 
 When the Tasks plugin is on, a card that you check gets the Tasks done date, such as `✅ 2026-10-10`, and loses it when you uncheck the card. Kanban Embed hands the card line to Tasks, so recurring tasks and the date format follow your settings. Without Tasks the card gets a plain `[x]`.
 
-When the board file changes, in the Kanban plugin or after a sync, every embed of that board draws again. Before each change, the plugin checks that the card line is still as on screen, or it does not write.
+When the board file changes, in the Kanban plugin or after a sync, the embeds of that board draw again. Before a check or a move, the plugin makes sure that the card line is as on screen, or it does not write.
 
 <img src="https://raw.githubusercontent.com/theluckystrike/kanban-embed/HEAD/docs/check-off.png" alt="A checked card in the embed, with the same card checked in the board file" width="720">
 
@@ -52,7 +52,7 @@ List more than one board, such as `board: [[Website redesign]], [[Mobile app]]`.
 
 ### Card filter (Pro)
 
-Add a line such as `filter: #design` or `filter: login #dev`; a card shows only when it has every word. A word with `#` must be a tag of the card; `#design` also matches `#design/web`.
+Add a line such as `filter: #design` or `filter: login #dev`; a card must have each word to show. A word with `#` must be a tag of the card; `#design` also matches `#design/web`.
 
 <img src="https://raw.githubusercontent.com/theluckystrike/kanban-embed/HEAD/docs/filter.png" alt="Only the cards tagged design from both boards" width="720">
 
@@ -80,15 +80,15 @@ board: [[Website redesign]]
 ```
 ~~~
 
-All the lines a block can have:
+The lines a block can have:
 
 | Line | What it does |
 | --- | --- |
 | `board: [[Name]]` | The board to show. Also `boards:`. More than one board is Pro. |
-| `lanes: A, B` | Show only these lanes, in this order. |
+| `lanes: A, B` | Show only these lanes, in this order. Also `lane:`. |
 | `hide-done: true` | Hide checked cards. `false` overrides the setting. |
-| `filter: words` | Only cards with every word. `#tag` words match tags. Pro. |
-| `swimlane: value` | Rows across the lanes: `tag`, `#prefix/`, `#a, #b` or `@{field}`. Pro. |
+| `filter: words` | Only cards with each word. `#tag` words match tags. Pro. |
+| `swimlane: value` | Rows across the lanes: `tag`, `#prefix/`, `#a, #b` or `@{field}`. Also `rows:`. Pro. |
 | `title: Text` | Header text instead of the board name. |
 
 A priority tag on a card line, such as `- [ ] Ship it #high`, gives the card a colored left border and a chip.
@@ -111,7 +111,7 @@ Pro adds moving cards (drag and drop or the Move to menu), adding cards, several
 | --- | --- |
 | Pro | Sign in, status, Refresh and Sign out. |
 | Lane width | Width of one lane in pixels, from 180 to 480. The default is 240. |
-| Hide done cards | Hide checked cards in every embed. A `hide-done` line wins for its block. |
+| Hide done cards | Hide checked cards in embeds that have no `hide-done` line. |
 
 <img src="https://raw.githubusercontent.com/theluckystrike/kanban-embed/HEAD/docs/settings.png" alt="The settings tab with the Pro section, lane width and hide done cards" width="720">
 
@@ -123,11 +123,11 @@ No. Kanban Embed reads the board file itself. The Kanban plugin gives the full b
 
 ### Does Kanban Embed change my board files?
 
-Only when you check, move or add a card. Each change edits only the lines of that card.
+Only when you check, move or add a card. A check or a move edits only the lines of that card.
 
 ### Does it work on a phone or tablet?
 
-Yes. Only drag and drop needs a mouse or trackpad; on a touch screen, use the Move to menu.
+It is not marked desktop only, but the tests run on desktop. On a touch screen, use the Move to menu to move cards.
 
 ### Which board format does it read?
 

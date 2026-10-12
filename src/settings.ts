@@ -66,7 +66,7 @@ export class KanbanEmbedSettingTab extends PluginSettingTab {
 			},
 			{
 				name: 'Hide done cards',
-				desc: 'Hide checked cards in every embed. A hide-done line in a block overrides this for that block.',
+				desc: 'Hide checked cards in embeds that have no hide-done line.',
 				control: { type: 'toggle', key: 'hideDone', defaultValue: DEFAULT_SETTINGS.hideDone },
 			},
 			{

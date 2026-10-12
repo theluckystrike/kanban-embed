@@ -62,7 +62,8 @@ export interface Board {
 }
 
 const CARD_RE = /^[-*+] (?:\[(.)\] ?)?(.*)$/;
-const HEADING_RE = /^(#{1,6})[ \t]+(.*?)[ \t]*#*[ \t]*$/;
+// A closing # sequence counts only after a space, as in CommonMark, so "## C#" is the lane C#.
+const HEADING_RE = /^(#{1,6})[ \t]+(.*?)(?:[ \t]+#+)?[ \t]*$/;
 const CONT_RE = /^(?: {4}|\t)/;
 const BLOCK_ID_RE = /[ \t]+\^[A-Za-z0-9-]+$/;
 const DATE_RE = /@\{([^}\n]+)\}|@\[\[([^\]\n]+)\]\]/;

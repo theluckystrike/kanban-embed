@@ -133,3 +133,10 @@ describe('helpers', () => {
 		expect(calm!.priority).toBe(null);
 	});
 });
+
+describe('lane headings', () => {
+	it('keeps a # that ends a word in the lane title and strips only a closing sequence after a space', () => {
+		const titles = (md: string) => parseBoard(md).lanes.map((l) => l.title);
+		expect(titles('## C#\n- [ ] a\n## F# (2)\n## Done ##\n## Issue #12\n')).toEqual(['C#', 'F#', 'Done', 'Issue #12']);
+	});
+});

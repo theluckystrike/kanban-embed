@@ -1,5 +1,11 @@
 # kanban-embed
 
+## 1.2.1
+
+### Patch Changes
+
+- 15c0583: Keep a lane title such as C# whole, unload the rendered card text of the old board on each redraw, and make the README claims match the code.
+
 ## 1.2.0
 
 ### Minor Changes
