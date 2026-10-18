@@ -143,12 +143,19 @@ export function parseBoard(md: string): Board {
 	const archive: Card[] = [];
 	let lane: Lane | null = null;
 	let inArchive = false;
-	let fence = false;
+	let fence: { char: string; length: number } | null = null;
 	for (let i = fm.body; i < lines.length; i++) {
 		const l = lines[i] ?? '';
+		const marker = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(l);
+		if (fence) {
+			if (marker && marker[1]![0] === fence.char && marker[1]!.length >= fence.length && marker[2]!.trim() === '') fence = null;
+			continue;
+		}
+		if (marker && (marker[1]![0] !== '`' || !marker[2]!.includes('`'))) {
+			fence = { char: marker[1]![0]!, length: marker[1]!.length };
+			continue;
+		}
 		if (/^%% kanban:settings/.test(l)) break;
-		if (/^(```|~~~)/.test(l)) fence = !fence;
-		if (fence) continue;
 		const h = HEADING_RE.exec(l);
 		if (h) {
 			inArchive = (h[2] ?? '').trim() === 'Archive' && afterBreak(lines, i);

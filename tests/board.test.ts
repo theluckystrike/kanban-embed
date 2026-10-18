@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cardMeta, insertLine, parseBoard, parseLaneTitle, priorityOf, splitLines } from '../src/board';
+import { cardMeta, insertLine, parseBoard, parseLaneTitle, priorityOf, splitLines, toggleCard } from '../src/board';
 
 const BOARD = [
 	'---',
@@ -138,5 +138,25 @@ describe('lane headings', () => {
 	it('keeps a # that ends a word in the lane title and strips only a closing sequence after a space', () => {
 		const titles = (md: string) => parseBoard(md).lanes.map((l) => l.title);
 		expect(titles('## C#\n- [ ] a\n## F# (2)\n## Done ##\n## Issue #12\n')).toEqual(['C#', 'F#', 'Done', 'Issue #12']);
+	});
+});
+
+describe('code fences in large boards', () => {
+	it('keeps shorter and other fence markers inside a longer fence', () => {
+		const md = '---\nkanban-plugin: board\n---\n## Real\n````markdown\n```\n## Fake\n- [ ] Not a card\n~~~\n````\n- [ ] Real card\n';
+		const board = parseBoard(md);
+		expect(board.lanes.map((l) => l.title)).toEqual(['Real']);
+		expect(board.lanes[0]!.cards.map((c) => c.title)).toEqual(['Real card']);
+	});
+	it('does not close a fence with a marker followed by text', () => {
+		const md = '## Lane\n~~~js\n~~~not a close\n- [ ] Code\n~~~\n- [ ] Task\n';
+		expect(parseBoard(md).lanes[0]!.cards.map((c) => c.title)).toEqual(['Task']);
+	});
+	it('keeps 500 Unicode cards and changes only the chosen checkbox', () => {
+		const cards = Array.from({ length: 500 }, (_, i) => `- [ ] ${i} 日本語 😀 مرحبا ${'x'.repeat(i === 499 ? 10000 : 2)}`);
+		const md = `---\r\nkanban-plugin: board\r\n---\r\n## Lane\r\n${cards.join('\r\n')}\r\n`;
+		expect(parseBoard(md).lanes[0]!.cards).toHaveLength(500);
+		const result = toggleCard(md, { lane: 0, card: 499, expect: cards[499] }, true);
+		expect(result).toEqual({ ok: true, md: md.replace(cards[499]!, cards[499]!.replace('[ ]', '[x]')) });
 	});
 });

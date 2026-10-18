@@ -1,5 +1,11 @@
 # kanban-embed
 
+## 1.2.3
+
+### Patch Changes
+
+- 42b56ac: Keep headings and cards inside longer or mixed code fences out of board embeds.
+
 ## 1.2.2
 
 ### Patch Changes

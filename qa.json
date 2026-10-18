@@ -3,7 +3,7 @@
 		"feature": "board-in-note",
 		"caption": "The Website redesign board inside a project page: four lanes, card counts, and In progress over its limit of 3.",
 		"note": "Website project.md",
-		"eval": "(async () => { if (!window.__keWeb) { window.__keWeb = await app.vault.read(app.vault.getFileByPath('Kanban Embed/Boards/Website redesign.md')); window.__keMob = await app.vault.read(app.vault.getFileByPath('Kanban Embed/Boards/Mobile app.md')); } app.plugins.plugins['kanban-embed'].pro.signOut(); await new Promise((r) => setTimeout(r, 700)); return 'ok'; })()",
+		"eval": "(async () => { await app.workspace.getLeaf(false).openFile(app.workspace.getActiveFile(), { state: { mode: 'preview', source: false } });  if (!window.__keWeb) { window.__keWeb = await app.vault.read(app.vault.getFileByPath('Kanban Embed/Boards/Website redesign.md')); window.__keMob = await app.vault.read(app.vault.getFileByPath('Kanban Embed/Boards/Mobile app.md')); } app.plugins.plugins['kanban-embed'].pro.signOut(); await new Promise((r) => setTimeout(r, 700)); return 'ok'; })()",
 		"wait": 1200,
 		"zoom": 0.85
 	},

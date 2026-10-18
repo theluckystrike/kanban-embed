@@ -2,7 +2,7 @@
 
 Shows a Kanban board inside any note, read from the board file, with live updates, lane picking and card check-off.
 
-Put a small code block in a project page, a daily note or a dashboard, and a Kanban board shows there. The board stays one Markdown file. The request is issue 4 of the Kanban plugin, open since April 2021 with more than 250 reactions. This plugin is separate and does not need the Kanban plugin.
+Put a code block in a note to show a board. The board stays one Markdown file. This plugin does not need the Kanban plugin.
 
 <img src="https://raw.githubusercontent.com/theluckystrike/kanban-embed/HEAD/docs/kanban-embed.gif" alt="Open the project page, check off a card, then move a card to Review" width="720">
 
@@ -131,7 +131,7 @@ It is not marked desktop only, but the tests run on desktop. On a touch screen, 
 
 ### Which board format does it read?
 
-The Markdown format of the Kanban plugin: `kanban-plugin: board` in the frontmatter, one heading per lane and one list item per card. Archived cards do not show.
+The Markdown format of the Kanban plugin: `kanban-plugin: board` in the frontmatter, one heading per lane and one list item per card. Archived cards do not show. Headings and list items inside fenced code do not become lanes or cards. A closing fence must use the same marker and be at least as long as the opening fence.
 
 ### How is this different from an embed with `![[Board]]`?
 
