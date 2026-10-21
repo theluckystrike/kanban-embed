@@ -2,7 +2,7 @@
 
 Shows a Kanban board inside any note, read from the board file, with live updates, lane picking and card check-off.
 
-Put a code block in a note to show a board. The board stays one Markdown file. This plugin does not need the Kanban plugin.
+The board stays one Markdown file.
 
 <img src="https://raw.githubusercontent.com/theluckystrike/kanban-embed/HEAD/docs/kanban-embed.gif" alt="Open the project page, check off a card, then move a card to Review" width="720">
 
@@ -10,7 +10,7 @@ Put a code block in a note to show a board. The board stays one Markdown file. T
 
 ### A board inside any note
 
-Add a `kanban-embed` code block with the board name. The block shows the lanes side by side, with the board name as a link and the card counts. Each lane shows its card count. A lane with a card limit, such as `## In progress (3)`, shows `4/3` and gets a warning border when it is over the limit.
+Add a `kanban-embed` code block with the board name. The block shows the lanes side by side, with the board name as a link. Each lane shows its card count. A lane with a card limit, such as `## In progress (3)`, shows `4/3` and gets a warning border when it is over the limit.
 
 Cards show their links, tags and formatting; a date such as `@{2026-10-14}` shows as a chip. A priority tag on a card gives it a colored left border and a chip: `#high`, `#urgent` or `#p1` for red, `#medium`, `#med` or `#p2` for orange, and `#low` or `#p3` for blue. With two priority tags, the higher one wins. The match ignores case. The block works in Reading view and in Live Preview.
 
@@ -24,11 +24,11 @@ Add `lanes: In progress, Review` to show only those lanes, in that order. Add `h
 
 ### Check off cards and live update
 
-Each card has a checkbox. Select it to check or uncheck; only the lines of that card change, plus the next copy of a recurring Tasks task.
+Select the checkbox of a card to check or uncheck it. Only the lines of that card change, plus the next copy of a recurring Tasks task.
 
-When the Tasks plugin is on, a card that you check gets the Tasks done date, such as `✅ 2026-10-10`, and loses it when you uncheck the card. Kanban Embed hands the card line to Tasks, so recurring tasks and the date format follow your settings. Without Tasks the card gets a plain `[x]`.
+When the Tasks plugin is on, a card that you check gets the Tasks done date, such as `✅ 2026-10-10`, and loses it when unchecked. Kanban Embed hands the card line to Tasks, so recurring tasks and the date format follow your settings. Without Tasks the card gets a plain `[x]`.
 
-When the board file changes, in the Kanban plugin or after a sync, the embeds of that board draw again. Before a check or a move, the plugin makes sure that the card line is as on screen, or it does not write.
+When the board file changes, in the Kanban plugin or after a sync, the embeds of that board draw again. Before a check or a move, the plugin confirms that the card line still matches the screen, or it does not write.
 
 <img src="https://raw.githubusercontent.com/theluckystrike/kanban-embed/HEAD/docs/check-off.png" alt="A checked card in the embed, with the same card checked in the board file" width="720">
 
@@ -40,7 +40,7 @@ Drag a card to another lane, or to another place in the same lane. On a touch sc
 
 ### Add cards (Pro)
 
-Select "Add a card" at the bottom of a lane, type the text and press Enter. It goes to the end of the lane; Escape cancels.
+Select "Add a card" at the bottom of a lane, type the text and press Enter to add it at the end of the lane; Escape cancels.
 
 <img src="https://raw.githubusercontent.com/theluckystrike/kanban-embed/HEAD/docs/add-card.png" alt="The add card field at the bottom of the Backlog lane" width="720">
 
@@ -91,21 +91,21 @@ The lines a block can have:
 | `swimlane: value` | Rows across the lanes: `tag`, `#prefix/`, `#a, #b` or `@{field}`. Also `rows:`. Pro. |
 | `title: Text` | Header text instead of the board name. |
 
-A priority tag on a card line, such as `- [ ] Ship it #high`, gives the card a colored left border and a chip.
-
 The board name works like a link, so `[[Website redesign]]` finds the note anywhere in the vault. An unknown block line shows a warning.
 
 ## Pro
 
 The free version shows one board per embed, with lane picking, hidden done cards, check-off and live update, and has no time or card limit.
 
-Pro adds moving cards (drag and drop or the Move to menu), adding cards, several boards in one embed, the card filter, and swimlane rows. To get it:
+Pro adds moving and adding cards, several boards in one embed, the card filter and swimlane rows. To get it:
 
-1. Sponsor [theluckystrike on GitHub Sponsors](https://github.com/sponsors/theluckystrike) with $5 a month, or $15 once. A total payment of $15 meets the payment requirement for Pro. Sign-in and the checks below still apply.
+1. Sponsor [theluckystrike on GitHub Sponsors](https://github.com/sponsors/theluckystrike) with $5 a month, or $15 once.
 2. In Obsidian, open the settings of Kanban Embed and select "Sign in with GitHub".
 3. Paste the code the plugin shows at github.com/login/device and approve. If you sponsor after you sign in, select Refresh.
 
 ## Settings
+
+After a minor or major update, this plugin opens one What's new tab in the background. The tab and settings card suggest other NoteMods plugins and Zovo Chat and link to notemods.com for feedback ([privacy](https://notemods.com/privacy/)). The tab sends no data. Turn the tab off in Settings.
 
 | Setting | What it does |
 | --- | --- |
@@ -119,7 +119,7 @@ Pro adds moving cards (drag and drop or the Move to menu), adding cards, several
 
 ### Do I need the Kanban plugin?
 
-No. Kanban Embed reads the board file itself. The Kanban plugin gives the full board view.
+No. Kanban Embed reads the board file itself.
 
 ### Does Kanban Embed change my board files?
 
@@ -127,15 +127,15 @@ Only when you check, move or add a card. A check or a move edits only the lines 
 
 ### Does it work on a phone or tablet?
 
-It is not marked desktop only, but the tests run on desktop. On a touch screen, use the Move to menu to move cards.
+It is not marked desktop only, but the tests run on desktop. On a touch screen, move cards with the Move to menu.
 
 ### Which board format does it read?
 
-The Markdown format of the Kanban plugin: `kanban-plugin: board` in the frontmatter, one heading per lane and one list item per card. Archived cards do not show. Headings and list items inside fenced code do not become lanes or cards. A closing fence must use the same marker and be at least as long as the opening fence.
+The Markdown format of the Kanban plugin: `kanban-plugin: board` in the frontmatter, one heading per lane and one list item per card. Archived cards do not show. Headings and list items inside fenced code are ignored. A code fence closes only with the same marker, at least as long as the opening one.
 
 ### How is this different from an embed with `![[Board]]`?
 
-A normal embed shows the board as Markdown. Kanban Embed shows the lanes side by side.
+A normal embed shows the board as plain Markdown, not as lanes side by side.
 
 ## Payment, account and network
 
