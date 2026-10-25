@@ -1,5 +1,6 @@
 {
 	"name": "kanban-embed",
+	"repository": {"type": "git", "url": "theluckystrike/kanban-embed.git"},
 	"version": "1.3.0",
 	"private": true,
 	"description": "Shows a Kanban board inside any note, read from the board file, with live updates, lane picking and card check-off.",
