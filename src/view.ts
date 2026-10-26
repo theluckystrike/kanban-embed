@@ -1,6 +1,6 @@
-import { Component, Keymap, MarkdownRenderChild, MarkdownRenderer, Menu, Notice, TFile, setIcon } from 'obsidian';
+import { Component, Keymap, MarkdownRenderChild, MarkdownRenderer, Menu, TFile, setIcon } from 'obsidian';
 import { buildView, parseConfig, type EmbedConfig, type EmbedView, type SourceBoard, type ViewCard, type ViewColumn } from './embed';
-import { FREE_MAX_BOARDS, isPro, onProChange } from './pro';
+import { FREE_MAX_BOARDS, isPro, onProChange, proNotice } from './pro';
 import { UNASSIGNED_KEY, describeSwimlane, dropIndex, groupSwimlanes, rowOf, rowSuffix, type SwimRow, type SwimlaneSpec } from './swimlanes';
 import type KanbanEmbedPlugin from './main';
 
@@ -402,6 +402,6 @@ export class BoardEmbed extends MarkdownRenderChild {
 	}
 
 	static needsPro(feature: string): void {
-		new Notice(`${feature} is a pro feature. Sponsor on GitHub, then sign in from the plugin settings.`);
+		proNotice(`${feature} is a pro feature.`);
 	}
 }
