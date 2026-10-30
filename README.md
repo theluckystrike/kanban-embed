@@ -70,34 +70,6 @@ Open Settings, then Community plugins, then Browse, and search for "Kanban Embed
 
 To install by hand, download `main.js`, `manifest.json` and `styles.css` from the latest release and put them in `<vault>/.obsidian/plugins/kanban-embed/`. Reload the community plugins, then turn on Kanban Embed.
 
-## Quick start
-
-With Kanban Embed enabled, create a note named **Example board** and paste this as its entire contents:
-
-```markdown
----
-kanban-plugin: board
----
-
-## To do
-
-- [ ] First task
-
-## Done
-
-- [x] Finished task
-```
-
-In a **different note in the same vault**, paste this block:
-
-````markdown
-```kanban-embed
-board: [[Example board]]
-```
-````
-
-Open the second note in **Reading view** or **Live Preview**. This single-board embed is free and does not require the separate Kanban plugin.
-
 ## Usage
 
 Put the cursor where the board should go, run the command "Insert a board embed" and pick a board. It inserts this block:
@@ -127,7 +99,7 @@ The free version shows one board per embed, with lane picking, hidden done cards
 
 Pro adds moving and adding cards, several boards in one embed, the card filter and swimlane rows. To get it:
 
-1. Sponsor [theluckystrike on GitHub Sponsors](https://github.com/sponsors/theluckystrike) with $5 a month, or $15 once.
+1. Sponsor [theluckystrike on GitHub Sponsors](https://github.com/sponsors/theluckystrike?metadata_source=kanban-embed) with $5 a month, or $15 once.
 2. In Obsidian, open the settings of Kanban Embed and select "Sign in with GitHub".
 3. Paste the code the plugin shows at github.com/login/device and approve. If you sponsor after you sign in, select Refresh.
 
@@ -179,7 +151,7 @@ After a successful check, Pro can work offline for up to 14 days. Sign out or a 
 
 ## Support
 
-Report a bug or a feature request in the issue tracker. To support the work, use [GitHub Sponsors](https://github.com/sponsors/theluckystrike).
+Report a bug or a feature request in the issue tracker. To support the work, use [GitHub Sponsors](https://github.com/sponsors/theluckystrike?metadata_source=kanban-embed).
 
 ```
 npm ci
