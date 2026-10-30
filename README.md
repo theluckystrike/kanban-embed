@@ -70,6 +70,34 @@ Open Settings, then Community plugins, then Browse, and search for "Kanban Embed
 
 To install by hand, download `main.js`, `manifest.json` and `styles.css` from the latest release and put them in `<vault>/.obsidian/plugins/kanban-embed/`. Reload the community plugins, then turn on Kanban Embed.
 
+## Quick start
+
+With Kanban Embed enabled, create a note named **Example board** and paste this as its entire contents:
+
+```markdown
+---
+kanban-plugin: board
+---
+
+## To do
+
+- [ ] First task
+
+## Done
+
+- [x] Finished task
+```
+
+In a **different note in the same vault**, paste this block:
+
+````markdown
+```kanban-embed
+board: [[Example board]]
+```
+````
+
+Open the second note in **Reading view** or **Live Preview**. This single-board embed is free and does not require the separate Kanban plugin.
+
 ## Usage
 
 Put the cursor where the board should go, run the command "Insert a board embed" and pick a board. It inserts this block:
