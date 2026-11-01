@@ -1,6 +1,6 @@
 // Pure logic of the kanban-embed code block: read its options, and build the columns to draw from one or more
 // parsed boards. No Obsidian imports, so the golden vectors run in plain Node.
-import { parseBoard, type Card } from './board';
+import { laneKey, parseBoard, type Card } from './board';
 import { parseSwimlane, type SwimlaneSpec } from './swimlanes';
 
 export interface EmbedConfig {
@@ -112,11 +112,6 @@ export function matchesFilter(card: Pick<Card, 'text' | 'tags'>, words: string[]
 		const x = w.toLowerCase();
 		return x.startsWith('#') ? tags.some((t) => t === x || t.startsWith(`${x}/`)) : text.includes(x);
 	});
-}
-
-/** Key for merging lanes of several boards: titles that differ only in case or spaces are one column. */
-function laneKey(title: string): string {
-	return title.trim().replace(/\s+/g, ' ').toLowerCase();
 }
 
 /**

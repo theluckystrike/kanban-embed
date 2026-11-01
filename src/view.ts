@@ -373,31 +373,56 @@ export class BoardEmbed extends MarkdownRenderChild {
 		return null;
 	}
 
-	/** The add card button of a lane or a swimlane cell. `suffix` goes behind the typed text, so a card added in a row is in that row. */
+	/**
+	 * The add card button of a lane or a swimlane cell. `suffix` goes behind the typed text, so a card added in a row is in that row.
+	 * When more than one board has the lane, a list picks the board (the first board by default). The write checks the lane title.
+	 */
 	private renderAdd(lane: HTMLElement, col: ViewColumn, suffix = ''): void {
-		const target = col.targets[0];
-		if (!target) return;
+		const first = col.targets[0];
+		if (!first) return;
 		const btn = lane.createEl('button', { cls: 'kanban-embed-add', text: 'Add a card' });
 		btn.addEventListener('click', () => {
 			if (!isPro()) return BoardEmbed.needsPro('Adding cards');
 			btn.hide();
 			this.adding = true;
-			const input = lane.createEl('input', { cls: 'kanban-embed-add-input', type: 'text', attr: { placeholder: 'New card text' } });
-			input.focus();
+			const form = lane.createDiv({ cls: 'kanban-embed-add-form' });
+			let target = first;
+			let closed = false;
 			const close = () => {
+				if (closed) return;
+				closed = true;
 				this.adding = false;
-				input.remove();
+				form.remove();
 				btn.show();
 			};
+			if (col.targets.length > 1) {
+				const select = form.createEl('select', { cls: 'dropdown kanban-embed-add-board', attr: { 'aria-label': 'Board for the new card' } });
+				col.targets.forEach((t, i) => select.createEl('option', { text: this.boards[t.board]?.name ?? '', value: String(i) }));
+				select.addEventListener('change', () => {
+					target = col.targets[Number(select.value)] ?? first;
+				});
+				select.addEventListener('keydown', (evt) => {
+					if (evt.key === 'Escape') close();
+				});
+			}
+			const input = form.createEl('input', { cls: 'kanban-embed-add-input', type: 'text', attr: { placeholder: 'New card text' } });
+			input.focus();
 			input.addEventListener('keydown', (evt) => {
 				if (evt.key === 'Escape') close();
 				if (evt.key !== 'Enter') return;
 				evt.preventDefault();
 				const text = input.value;
+				const board = this.boards[target.board];
 				close();
-				void this.plugin.add(this.boards[target.board]!.path, target.lane, text.trim() === '' ? text : `${text.trim()}${suffix}`);
+				if (board) void this.plugin.add(board.path, target.lane, text.trim() === '' ? text : `${text.trim()}${suffix}`, col.title);
 			});
-			input.addEventListener('blur', () => window.setTimeout(close, 150));
+			// Close when the focus leaves the form, not when it moves from the text field to the board list.
+			form.addEventListener('focusout', (evt) => {
+				if (evt.relatedTarget instanceof Node && form.contains(evt.relatedTarget)) return;
+				window.setTimeout(() => {
+					if (!form.contains(form.ownerDocument.activeElement)) close();
+				}, 150);
+			});
 		});
 	}
 

@@ -1,5 +1,11 @@
 # kanban-embed
 
+## 1.3.3
+
+### Patch Changes
+
+- Add a card now checks the lane name before it writes. If the board file changed while you typed, the card goes to the lane with the name that you saw. If that lane is gone, or two lanes have that name, nothing is written and a notice asks you to try again. When more than one board in the embed has the lane, the add field shows a list to pick the board. The first board is the default.
+
 ## 1.3.2
 
 ### Patch Changes

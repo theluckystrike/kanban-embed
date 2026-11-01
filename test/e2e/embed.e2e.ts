@@ -136,6 +136,51 @@ describe(`${pluginId} in the real app`, function () {
 		await browser.waitUntil(async () => (await readFile(WEB)).includes('- [ ] Compress hero images #perf\n- [ ] Order the launch cake\n'), { timeout: 5000, timeoutMsg: 'card not added' });
 	});
 
+	it('pro: adds a card to the lane on screen when another lane is put before it while the field is open (s1101)', async function () {
+		await setPro(true);
+		await open('Website project.md');
+		await waitFor((x) => x.cards === 10, 'website board not drawn');
+		await browser.execute(() => {
+			const lane = Array.from(document.querySelectorAll<HTMLElement>('.workspace-leaf.mod-active .kanban-embed-lane')).filter((x) => x.offsetParent !== null).find((l) => l.dataset.lane === 'Review')!;
+			lane.querySelector<HTMLElement>('.kanban-embed-add')!.click();
+		});
+		const input = await browser.$('.workspace-leaf.mod-active .markdown-reading-view .kanban-embed-add-input');
+		await input.waitForDisplayed({ timeout: 5000 });
+		// Another app (Kanban, sync) puts a new lane before Review while the add field is open.
+		await writeFile(WEB, web.replace('## Review', '## Blocked\n\n- [ ] Waiting on legal\n\n## Review'));
+		await input.setValue('Check the cookie banner');
+		await browser.keys('Enter');
+		await browser.waitUntil(async () => /## Review\n(?:(?!## ).*\n)*- \[ \] Check the cookie banner\n/.test(await readFile(WEB)), {
+			timeout: 5000,
+			timeoutMsg: `card not in Review; notice: ${await lastNotice()}; file: ${await readFile(WEB)}`,
+		});
+		expect(await readFile(WEB)).toContain('## Blocked\n\n- [ ] Waiting on legal\n\n## Review');
+	});
+
+	it('pro: picks the board for a new card in a column of two boards (s1101)', async function () {
+		await setPro(true);
+		await open('This week.md');
+		await waitFor((x) => x.cards === 8, 'two boards not merged');
+		await browser.execute(() => {
+			const lane = Array.from(document.querySelectorAll<HTMLElement>('.workspace-leaf.mod-active .kanban-embed-lane')).filter((x) => x.offsetParent !== null).find((l) => l.dataset.lane === 'Review')!;
+			lane.querySelector<HTMLElement>('.kanban-embed-add')!.click();
+		});
+		const select = await browser.$('.workspace-leaf.mod-active .markdown-reading-view .kanban-embed-add-board');
+		await select.waitForDisplayed({ timeout: 5000 });
+		const names = await browser.execute(() => Array.from(document.querySelectorAll<HTMLOptionElement>('.workspace-leaf.mod-active .markdown-reading-view .kanban-embed-add-board option')).map((o) => o.text));
+		expect(names).toEqual(['Website redesign', 'Mobile app']);
+		await select.selectByVisibleText('Mobile app');
+		const input = await browser.$('.workspace-leaf.mod-active .markdown-reading-view .kanban-embed-add-input');
+		await input.waitForDisplayed({ timeout: 5000 });
+		await input.setValue('Ship the beta build');
+		await browser.keys('Enter');
+		await browser.waitUntil(async () => (await readFile(MOBILE)).includes('- [ ] Sign in with passkeys #dev\n- [ ] Ship the beta build\n'), {
+			timeout: 5000,
+			timeoutMsg: `card not added to Mobile app; notice: ${await lastNotice()}`,
+		});
+		expect(await readFile(WEB)).toBe(web);
+	});
+
 	it('pro: the filter line keeps only matching cards', async function () {
 		await setPro(true);
 		await open('Design queue.md');

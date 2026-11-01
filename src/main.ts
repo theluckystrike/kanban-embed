@@ -134,13 +134,13 @@ export default class KanbanEmbedPlugin extends Plugin {
 		return this.edit(path, (md) => applyEdit(md, { type: 'move', lane: card.lane, card: card.index, expect: card.raw, toLane: lane, index }, tasksBridge(this.app, path)));
 	}
 
-	/** Pro: adds a card at the end of a lane. */
-	async add(path: string, lane: number, text: string): Promise<boolean> {
+	/** Pro: adds a card at the end of a lane. `title` is the lane title on screen; the write checks it (see addCard). */
+	async add(path: string, lane: number, text: string, title?: string): Promise<boolean> {
 		if (!isPro()) {
 			BoardEmbed.needsPro('Adding cards');
 			return false;
 		}
-		return this.edit(path, (md) => applyEdit(md, { type: 'add', lane, text }, tasksBridge(this.app, path)));
+		return this.edit(path, (md) => applyEdit(md, { type: 'add', lane, text, expect: title }, tasksBridge(this.app, path)));
 	}
 
 	async loadSettings(): Promise<void> {

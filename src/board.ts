@@ -259,14 +259,35 @@ export function moveCard(md: string, from: CardRef, to: { lane: number; index: n
 	return { ok: true, md: insertAt(out, pos >= card.line ? pos + stays.length : pos, block).join(eol) };
 }
 
-/** Adds a card at the end of a lane. The text becomes one line; a Complete lane gets a checked card. */
-export function addCard(md: string, lane: number, text: string, tasks?: TasksBridge | null): EditResult {
+/** Key for merging lanes of several boards: titles that differ only in case or spaces are one column. */
+export function laneKey(title: string): string {
+	return title.trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+/**
+ * The lane for a new card. Without a title, the lane at that index. With the title that the caller saw, the lane at
+ * that index when its title is the same, else the one lane with that title. No lane or two lanes with that title give stale.
+ */
+function laneFor(board: Board, lane: number, title?: string): Lane | EditResult {
+	const at = board.lanes[lane];
+	if (title === undefined) return at ?? { ok: false, reason: 'missing' };
+	const key = laneKey(title);
+	if (at && laneKey(at.title) === key) return at;
+	const same = board.lanes.filter((l) => laneKey(l.title) === key);
+	return same.length === 1 && same[0] ? same[0] : { ok: false, reason: 'stale' };
+}
+
+/**
+ * Adds a card at the end of a lane. The text becomes one line; a Complete lane gets a checked card.
+ * `expect` is the lane title that the caller saw: a lane that moved is found by its title, and a lane that is gone gives stale.
+ */
+export function addCard(md: string, lane: number, text: string, tasks?: TasksBridge | null, expect?: string): EditResult {
 	const clean = text.replace(/\s*\r?\n\s*/g, ' ').trim();
 	if (clean === '') return { ok: false, reason: 'empty' };
 	const board = parseBoard(md);
 	const { lines, eol } = splitLines(md);
-	const dst = board.lanes[lane];
-	if (!dst) return { ok: false, reason: 'missing' };
+	const dst = laneFor(board, lane, expect);
+	if ('ok' in dst) return dst;
 	const at = insertLine(lines, dst, dst.cards.length);
 	const open = [`- [ ] ${clean}`];
 	const added = dst.complete ? markDone(open, true, tasks ?? null).all.flat() : open;
@@ -276,11 +297,11 @@ export function addCard(md: string, lane: number, text: string, tasks?: TasksBri
 export type EditOp =
 	| { type: 'toggle'; lane: number; card: number; checked?: boolean; expect?: string }
 	| { type: 'move'; lane: number; card: number; toLane: number; index: number; expect?: string }
-	| { type: 'add'; lane: number; text: string };
+	| { type: 'add'; lane: number; text: string; expect?: string };
 
 /** One change to a board file, as the embed asks for it. The golden vectors call this. */
 export function applyEdit(md: string, op: EditOp, tasks?: TasksBridge | null): EditResult {
 	if (op.type === 'toggle') return toggleCard(md, { lane: op.lane, card: op.card, expect: op.expect }, op.checked, tasks);
 	if (op.type === 'move') return moveCard(md, { lane: op.lane, card: op.card, expect: op.expect }, { lane: op.toLane, index: op.index }, tasks);
-	return addCard(md, op.lane, op.text, tasks);
+	return addCard(md, op.lane, op.text, tasks, op.expect);
 }
