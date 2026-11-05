@@ -129,7 +129,7 @@ Pro adds moving and adding cards, several boards in one embed, the card filter a
 
 1. Sponsor [theluckystrike on GitHub Sponsors](https://github.com/sponsors/theluckystrike?frequency=one-time&metadata_source=kanban-embed) with $5 a month, or $15 once.
 2. In Obsidian, open the settings of Kanban Embed and select "Sign in with GitHub".
-3. Paste the code the plugin shows at github.com/login/device and approve. If you sponsor after you sign in, select Refresh.
+3. Paste the code the plugin shows at github.com/login/device and approve.
 
 ## Settings
 
@@ -168,6 +168,8 @@ A normal embed shows the board as plain Markdown, not as lanes side by side.
 ## Payment, account and network
 
 The core features are free. Pro features need a GitHub Sponsors sponsorship of theluckystrike: $5 a month or more, or $15 once. A total payment of $15 meets the payment requirement for Pro without further payment. Sign-in and the checks below still apply. Your notes stay readable and editable with or without Pro.
+
+[One payment turns on Pro in every NoteMods plugin](https://notemods.com/pro/).
 
 GitHub handles the payment. Sponsor at https://github.com/sponsors/theluckystrike?frequency=one-time&metadata_source=kanban-embed. You need no account for the free features. Pro needs the GitHub account that sponsors.
 
