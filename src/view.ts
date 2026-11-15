@@ -308,7 +308,7 @@ export class BoardEmbed extends MarkdownRenderChild {
 	private bindLinks(body: HTMLElement, boardPath: string): void {
 		body.addEventListener('click', (evt) => {
 			const a = (evt.target as HTMLElement).closest('a.internal-link');
-			if (!(a instanceof HTMLAnchorElement)) return;
+			if (!a?.instanceOf(HTMLAnchorElement)) return;
 			evt.preventDefault();
 			const target = a.getAttr('data-href') ?? a.getAttr('href') ?? '';
 			void this.plugin.app.workspace.openLinkText(target, boardPath, Keymap.isModEvent(evt));
@@ -418,7 +418,9 @@ export class BoardEmbed extends MarkdownRenderChild {
 			});
 			// Close when the focus leaves the form, not when it moves from the text field to the board list.
 			form.addEventListener('focusout', (evt) => {
-				if (evt.relatedTarget instanceof Node && form.contains(evt.relatedTarget)) return;
+				const rel = evt.relatedTarget;
+				// relatedTarget is any EventTarget. A Node check that works for nodes of popout windows too.
+				if (rel !== null && 'nodeType' in rel && form.contains(rel as Node)) return;
 				window.setTimeout(() => {
 					if (!form.contains(form.ownerDocument.activeElement)) close();
 				}, 150);
